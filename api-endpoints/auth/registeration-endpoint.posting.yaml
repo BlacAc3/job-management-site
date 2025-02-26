@@ -1,0 +1,15 @@
+name: Registeration Endpoint
+method: POST
+url: http://localhost:8500/api/auth/register
+body:
+  content: |-
+    {
+        "firstName":"Aaron",
+        "lastName":"Ezeala",
+        "email":"aaron.ezeala@tm.com",
+        "password":"mypassword"
+    }
+  content_type: application/json
+headers:
+- name: content-type
+  value: application/json

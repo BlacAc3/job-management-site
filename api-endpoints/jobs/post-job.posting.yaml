@@ -1,0 +1,18 @@
+name: Post Job
+method: POST
+url: http://localhost:8500/api/jobs
+body:
+  content: |-
+    {
+      "title": "Data Engineer",
+      "description": "Detailed job description",
+      "type": "Full-time",
+      "location": "Dehli, India",
+      "company":"Amazon"
+    }
+  content_type: application/json
+headers:
+- name: content-type
+  value: application/json
+- name: Authorization
+  value: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3YTcxZGM0YzRjNGYxODkwYzEwMDU0OSIsImlhdCI6MTczOTAwNzg1NSwiZXhwIjoxNzM5MDk0MjU1fQ.6qJC_MgtWkJ7VveNmtL90gjrnLJwVIEx9aegU5LvjJo

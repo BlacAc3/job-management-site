@@ -1,0 +1,14 @@
+name: Update Job
+method: PUT
+url: http://localhost:8500/api/jobs/67a72a4cc38e53af5b6bbf16
+body:
+  content: |-
+    {
+      "location":"Dehli, India"
+    }
+  content_type: application/json
+headers:
+- name: content-type
+  value: application/json
+- name: Authorization
+  value: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3YTcxZGM0YzRjNGYxODkwYzEwMDU0OSIsImlhdCI6MTczOTAwODUzMywiZXhwIjoxNzM5MDk0OTMzfQ.4xXITTl-I7ElsD8MZ8ONHTV9Ub3CKJE8iQgSO0u15_0
