@@ -1,138 +1,164 @@
-# Job Board API Endpoints and Features
-
-This document outlines the API endpoints and features for a job board website, including both implemented and planned functionalities.
-
 ## Implemented Endpoints and Features
 
 ### User Authentication
 
-*   `/api/users/register`:
-    *   **Method:** POST
-    *   **Description:** Registers a new user (both job seekers and employers).  Requires fields like `email`, `password`, `user_type` (e.g., "seeker", "employer"), `first_name`, `last_name`.  Returns a JWT upon successful registration.
-    *   **Status:** Implemented
-*   `/api/users/login`:
-    *   **Method:** POST
-    *   **Description:** Logs in an existing user. Requires `email` and `password`. Returns a JWT upon successful login.
-    *   **Status:** Implemented
-*   `/api/users/me`:
-    *   **Method:** GET
-    *   **Description:** Retrieves the profile of the currently logged-in user. Requires a valid JWT in the `Authorization` header.
-    *    **Status:** Implemented
+* `/api/auth/register`:
+  * **Method:** POST
+  * **Description:** Registers a new user.
+  * **Request Body:** `firstName`, `lastName`, `email`, `password`
+  * **Response:** Returns user details and a JWT upon successful registration.
+  * **Status:** Implemented
+
+* `/api/auth/login`:
+  * **Method:** POST
+  * **Description:** Logs in an existing user.
+  * **Request Body:** `email`, `password`
+  * **Response:** Returns user details and a JWT upon successful login.
+  * **Status:** Implemented
+
+* `/api/auth/me`:
+  * **Method:** POST
+  * **Description:** Retrieves the profile of the currently logged-in user.
+  * **Response:** Returns user details.
+  * **Status:** Implemented
+
+* `/api/auth/logout`:
+  * **Method:** POST
+  * **Description:** Logs out the current user by invalidating their token.
+  * **Response:** Confirmation message.
+  * **Status:** Implemented
+
+* `/api/auth/forgot-password`:
+  * **Method:** POST
+  * **Description:** Initiates password reset process.
+  * **Request Body:** `email`
+  * **Response:** Reset token (in production, this would be sent via email).
+  * **Status:** Implemented
+
+* `/api/auth/reset-password`:
+  * **Method:** POST
+  * **Description:** Resets user password using the token.
+  * **Request Body:** `resetToken`, `newPassword`
+  * **Response:** Confirmation message.
+  * **Status:** Implemented
 
 ### Job Postings
 
-*   `/api/jobs`:
-    *   **Method:** GET
-    *   **Description:** Retrieves a list of all job postings. Supports pagination, filtering (by keywords, location, salary range, job type, etc.), and sorting (by date, relevance, etc.).
-        *    **Query Parameters (Implemented):** `page`, `limit`, `search` (for keyword search)
-    *   **Status:** Partially Implemented (basic listing and search)
-*   `/api/jobs`:
-    *   **Method:** POST
-    *   **Description:** Creates a new job posting.  Requires a valid JWT (employer role) and fields like `title`, `description`, `location`, `salary`, `job_type`, `company_id`.
-    *   **Status:** Implemented
-*   `/api/jobs/{job_id}`:
-    *   **Method:** GET
-    *   **Description:** Retrieves a specific job posting by its ID.
-    *   **Status:** Implemented
-*   `/api/jobs/{job_id}`:
-    *   **Method:** PUT
-    *   **Description:** Updates an existing job posting. Requires a valid JWT (employer role and ownership of the job posting).
-    *   **Status:** Implemented
-*   `/api/jobs/{job_id}`:
-    *   **Method:** DELETE
-    *   **Description:** Deletes a job posting. Requires a valid JWT (employer role and ownership of the job posting).
-    *   **Status:** Implemented
+* `/api/jobs`:
+  * **Method:** GET
+  * **Description:** Retrieves a list of all job postings.
+  * **Query Parameters:** `page`, `limit`, `type`, `location`
+  * **Response:** List of jobs with pagination details.
+  * **Status:** Implemented
 
-### Company Profiles
+* `/api/jobs`:
+  * **Method:** POST
+  * **Description:** Creates a new job posting.
+  * **Request Body:** `title`, `description`, `type`, `location`, `company`, `salary`
+  * **Auth Required:** Yes
+  * **Response:** Created job details.
+  * **Status:** Implemented
 
-*   `/api/companies`:
-    *    **Method:** GET
-    *    **Description:** Retrieves a list of companies.
-    *    **Status:** Implemented
-*   `/api/companies/{company_id}`:
-    *   **Method:** GET
-    *   **Description:** Retrieves a specific company profile by its ID.
-    *   **Status:** Implemented
-*    `/api/companies`:
-    *    **Method:** POST
-    *    **Description:** Allows employers to create new companies.
-    *    **Status:** Implemented
-*    `/api/companies/{company_id}`:
-    *    **Method:** PUT
-    *    **Description:** Updates an existing company. Requires a valid JWT (employer role and ownership of the company).
-    *   **Status:** Implemented
+* `/api/jobs/:id`:
+  * **Method:** GET
+  * **Description:** Retrieves a specific job posting by its ID.
+  * **Response:** Job details.
+  * **Status:** Implemented
+
+* `/api/jobs/:id`:
+  * **Method:** PUT
+  * **Description:** Updates an existing job posting.
+  * **Request Body:** Job fields to update.
+  * **Auth Required:** Yes (job owner or admin)
+  * **Response:** Updated job details.
+  * **Status:** Implemented
+
+* `/api/jobs/:id`:
+  * **Method:** DELETE
+  * **Description:** Deletes a job posting.
+  * **Auth Required:** Yes (job owner or admin)
+  * **Response:** Confirmation message.
+  * **Status:** Implemented
+
+* `/api/jobs/my-jobs`:
+  * **Method:** GET
+  * **Description:** Retrieves jobs posted by the logged-in user.
+  * **Auth Required:** Yes
+  * **Response:** List of user's jobs.
+  * **Status:** Implemented
 
 ### Job Applications
 
-*    `/api/jobs/{job_id}/apply`
-    *     **Method:** POST
-    *     **Description:** Allows the logged in job seeker to apply to a job.
-    *    **Status:** Implemented
+* `/api/jobs/:id/apply`:
+  * **Method:** POST
+  * **Description:** Allows a user to apply to a job.
+  * **Request Body:** `coverLetter`, `resume`
+  * **Auth Required:** Yes
+  * **Response:** Application details.
+  * **Status:** Implemented
 
-## Unimplemented and Necessary Features (for Production Readiness)
+* `/api/jobs/:id/applications`:
+  * **Method:** GET
+  * **Description:** Retrieves applications for a job posting.
+  * **Auth Required:** Yes (job owner or admin)
+  * **Response:** List of applications.
+  * **Status:** Implemented
+
+* `/api/jobs/:id/applications/:applicationId`:
+  * **Method:** PUT
+  * **Description:** Updates an application status.
+  * **Request Body:** `status` (pending, accepted, rejected)
+  * **Auth Required:** Yes (job owner or admin)
+  * **Response:** Updated application details.
+  * **Status:** Implemented
+
+* `/api/jobs/:id/applications/:applicationId`:
+  * **Method:** DELETE
+  * **Description:** Deletes a job application.
+  * **Auth Required:** Yes (job owner, applicant, or admin)
+  * **Response:** Confirmation message.
+  * **Status:** Implemented
+
+## Planned Features (Not Yet Implemented)
 
 ### User Authentication & Authorization
 
-*   **Password Reset:**
-    *   `/api/users/forgot-password`: (POST) Initiate password reset process (send email with reset token).
-    *   `/api/users/reset-password`: (POST) Reset password using the token.
-*   **Email Verification:**
-    *   `/api/users/verify-email/{token}`: (GET) Verify user email after registration.
-*   **Role-Based Access Control (RBAC):**  More granular control over permissions beyond just "seeker" and "employer".  (e.g., "admin", "moderator").
-*   **Social Login:**  Integration with third-party providers (Google, LinkedIn, etc.).
-*    **Two-Factor Authentication (2FA):** Enhance the sign in security.
+* **Email Verification:** Verify user email after registration.
+* **Role-Based Access Control (RBAC):** More granular control over permissions.
+* **Social Login:** Integration with third-party providers.
+* **Two-Factor Authentication (2FA):** Enhance sign-in security.
 
 ### Job Postings
 
-*   **Advanced Filtering:**
-    *   `/api/jobs`: (GET) Implement all planned query parameters:  `location`, `salary_min`, `salary_max`, `job_type` (full-time, part-time, contract, etc.), `experience_level`, `industry`, `date_posted`.
-*   **Featured/Sponsored Jobs:**  Ability to mark certain jobs as featured (higher visibility).
-    *   `/api/jobs/{job_id}/feature`: (POST) - Admin endpoint to feature a job.
-*   **Job Expiration:** Automatically expire job postings after a certain period.
-*   **Job Saving:** Allow job seekers to save jobs for later.
-    *   `/api/users/me/saved-jobs`: (GET) - Retrieve saved jobs.
-    *   `/api/jobs/{job_id}/save`: (POST) - Save a job.
-    *   `/api/jobs/{job_id}/unsave`: (DELETE) - Unsave a job.
-*   **Similar Jobs Recommendations:** Suggest similar jobs based on a user's profile and viewed jobs.
+* **Advanced Filtering:** Additional query parameters like salary range, experience level, etc.
+* **Featured/Sponsored Jobs:** Ability to mark certain jobs as featured.
+* **Job Expiration:** Automatically expire job postings after a certain period.
+* **Job Saving:** Allow job seekers to save jobs for later.
+* **Similar Jobs Recommendations:** Suggest similar jobs based on user profile.
 
 ### Company Profiles
 
-*   **Company Reviews:**  Allow users to review companies.
-    *    `/api/companies/{company_id}/reviews`: (GET, POST) - Get and post reviews.
-*   **Company Followers:** Allow users to follow companies.
-*   **Company Branding:** Allow companies to customize their profiles more extensively (logo, banner image, about section, etc.).
+* **Company Profiles:** Create and manage company profiles.
+* **Company Reviews:** Allow users to review companies.
+* **Company Followers:** Allow users to follow companies.
+* **Company Branding:** Customization options for company profiles.
 
 ### Job Applications
 
-*   **Application Tracking:**  Allow employers to manage applications (track status, add notes, etc.).
-    *   `/api/jobs/{job_id}/applications`: (GET) - Get applications for a job (employer view).
-    *   `/api/applications/{application_id}`: (GET, PUT) - Get and update application details (employer view).
-*   **Resume/CV Upload:**
-    *   `/api/applications/{application_id}/resume`: (POST) - Upload resume/CV.
-*   **Cover Letter:** Allow job seekers to submit a cover letter.
-*   **Application Status Updates:**  Notify job seekers about changes in their application status.
-*    **Internal Messaging:** Facilitate in-app communication between applicants and hiring managers.
+* **Resume/CV Upload:** Support for document uploads.
+* **Internal Messaging:** Communication between applicants and hiring managers.
 
-### Admin Panel
+### Admin Features
 
-*   **User Management:**  CRUD operations for user accounts.
-*   **Job Posting Moderation:**  Review and approve/reject job postings.
-*   **Content Management:**  Manage static content on the site (e.g., FAQs, terms of service).
-*   **Analytics Dashboard:**  Track key metrics (job postings, applications, user activity, etc.).
+* **User Management:** CRUD operations for user accounts.
+* **Job Posting Moderation:** Review and approve/reject job postings.
+* **Analytics Dashboard:** Track key metrics.
 
 ### General Improvements
 
-*   **Email Notifications:**  Send email notifications for various events (new job postings, application updates, password resets, etc.).
-*   **Search Indexing:**  Use a dedicated search index (e.g., Elasticsearch, Algolia) for faster and more relevant search results.
-*   **Rate Limiting:**  Prevent abuse by limiting the number of requests from a single IP address or user.
-*   **Error Handling:**  Implement robust error handling and reporting.
-*   **Logging:**  Comprehensive logging for debugging and auditing.
-*   **Testing:**  Thorough unit and integration tests.
-*   **Deployment:**  Automated deployment pipeline (CI/CD).
-*   **Scalability:**  Design the system to handle a large number of users and job postings.
-*   **Internationalization (i18n):**  Support multiple languages.
-*   **Accessibility (a11y):**  Ensure the website is accessible to users with disabilities.
-*   **Payment Gateway Integration:** if sponsored posts will be a feature, then there must be payment options for employers.
-
-This list provides a comprehensive overview of the features required for a production-ready job board website. The "Unimplemented" section highlights areas for future development.
-```
+* **Email Notifications:** For various events and updates.
+* **Advanced Search:** Improved search functionality.
+* **Rate Limiting:** Prevent abuse.
+* **Testing & Deployment:** Automated testing and deployment pipelines.
+* **Scalability Improvements:** For handling larger user bases.
+* **Payment Integration:** For premium features.
