@@ -7,6 +7,11 @@ const applicationSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    job: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Job",
+      required: true,
+    },
     coverLetter: { type: String },
     resume: { type: String },
     status: {

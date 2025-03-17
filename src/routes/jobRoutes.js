@@ -29,7 +29,7 @@ router.get("/jobs/:id", getJobById);
 router.post("/jobs", requireAuth, postJob);
 router.put("/jobs/:id", requireAuth, updateJob);
 router.delete("/jobs/:id", requireAuth, deleteJob); //user deletes their own job postings, or admin deletes any
-router.get("/jobs/my-jobs", requireAuth, getJobsByUser); //user views their own job postings
+router.get("/job/my-jobs", requireAuth, getJobsByUser); //user views their own job postings
 router.post("/jobs/:id/apply", requireAuth, applyToJob); //user applies to a job posting
 router.get("/jobs/:id/applications", requireAuth, getJobApplications); //user/admin views applications for their job postings
 router.put(

@@ -150,10 +150,11 @@ const applyToJob = async (req, res) => {
     }
 
     // Check if user has already applied to this job
-    const existingApplication = await Application.findOne({
-      job: jobId,
-      applicant: userId,
-    });
+    const existingApplication =
+      job.applications &&
+      job.applications.some(
+        (application) => application.applicant.toString() === userId,
+      );
 
     if (existingApplication) {
       return res
@@ -163,12 +164,16 @@ const applyToJob = async (req, res) => {
 
     // Create new application
     const newApplication = new Application({
-      job: jobId,
       applicant: userId,
+      job: job._id,
       coverLetter,
       resume,
       status: "pending",
     });
+
+    job.applications.push(newApplication);
+
+    await job.save();
 
     const savedApplication = await newApplication.save();
 
@@ -201,9 +206,17 @@ const getJobApplications = async (req, res) => {
     }
 
     // Get all applications for the job
-    const applications = await Application.find({ job: jobId })
-      .populate("applicant", "name email") // Populate applicant data
-      .select("-__v");
+    const jobs = await Job.find({ postedBy: userId });
+    const applications = await Job.findById(jobId)
+      .populate({
+        path: "applications",
+        populate: {
+          path: "applicant",
+          select: "firstName email",
+        },
+        select: "-__v",
+      })
+      .then((job) => job.applications || []);
 
     res.status(200).json(applications);
   } catch (error) {
@@ -215,14 +228,21 @@ const getJobApplications = async (req, res) => {
 const updateApplicationStatus = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { id: jobId, applicationId } = req.params;
+    const { applicationId } = req.params;
     const { status } = req.body;
 
     if (!status || !["pending", "accepted", "rejected"].includes(status)) {
       return res.status(400).json({ message: "Valid status is required" });
     }
 
+    // Find and update the application
+    const application = await Application.findById(applicationId);
+    if (!application) {
+      return res.status(404).json({ message: "Application not found" });
+    }
+
     // Find the job
+    const jobId = application.job.toString();
     const job = await Job.findById(jobId);
     if (!job) {
       return res.status(404).json({ message: "Job not found" });
@@ -233,12 +253,6 @@ const updateApplicationStatus = async (req, res) => {
       return res
         .status(403)
         .json({ message: "Unauthorized to update application status" });
-    }
-
-    // Find and update the application
-    const application = await Application.findById(applicationId);
-    if (!application || application.job.toString() !== jobId) {
-      return res.status(404).json({ message: "Application not found" });
     }
 
     application.status = status;
@@ -258,19 +272,22 @@ const updateApplicationStatus = async (req, res) => {
 const deleteApplication = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { id: jobId, applicationId } = req.params;
+    const { applicationId } = req.params;
+
+    //Find the application
+    const application = await Application.findById(applicationId);
+    if (!application) {
+      return res.status(404).json({ message: "Application not found" });
+    }
 
     // Find the job
+    const jobId = application.job.toString();
     const job = await Job.findById(jobId);
     if (!job) {
       return res.status(404).json({ message: "Job not found" });
     }
 
     // Find the application
-    const application = await Application.findById(applicationId);
-    if (!application || application.job.toString() !== jobId) {
-      return res.status(404).json({ message: "Application not found" });
-    }
 
     // Check if user is authorized to delete the application
     if (

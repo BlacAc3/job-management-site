@@ -1,164 +1,273 @@
-## Implemented Endpoints and Features
+# Job Management API Documentation
 
-### User Authentication
+## Overview
+This API provides endpoints for user authentication, job posting, job applications, and related operations for a job management platform.
 
-* `/api/auth/register`:
-  * **Method:** POST
-  * **Description:** Registers a new user.
-  * **Request Body:** `firstName`, `lastName`, `email`, `password`
-  * **Response:** Returns user details and a JWT upon successful registration.
-  * **Status:** Implemented
+## Authentication Endpoints
 
-* `/api/auth/login`:
-  * **Method:** POST
-  * **Description:** Logs in an existing user.
-  * **Request Body:** `email`, `password`
-  * **Response:** Returns user details and a JWT upon successful login.
-  * **Status:** Implemented
+### Register User
+- **URL**: `/auth/register`
+- **Method**: `POST`
+- **Description**: Register a new user
+- **Body**:
+  ```json
+  {
+    "firstName": "string",
+    "lastName": "string",
+    "email": "string",
+    "password": "string"
+  }
+  ```
+- **Response**: User object with JWT token
 
-* `/api/auth/me`:
-  * **Method:** POST
-  * **Description:** Retrieves the profile of the currently logged-in user.
-  * **Response:** Returns user details.
-  * **Status:** Implemented
+### Login User
+- **URL**: `/auth/login`
+- **Method**: `POST`
+- **Description**: Authenticate a user
+- **Body**:
+  ```json
+  {
+    "email": "string",
+    "password": "string"
+  }
+  ```
+- **Response**: User object with JWT token
 
-* `/api/auth/logout`:
-  * **Method:** POST
-  * **Description:** Logs out the current user by invalidating their token.
-  * **Response:** Confirmation message.
-  * **Status:** Implemented
+### Logout User
+- **URL**: `/auth/logout`
+- **Method**: `POST`
+- **Description**: Invalidate user's token
+- **Headers**: Requires authorization token
+- **Response**: Success message
 
-* `/api/auth/forgot-password`:
-  * **Method:** POST
-  * **Description:** Initiates password reset process.
-  * **Request Body:** `email`
-  * **Response:** Reset token (in production, this would be sent via email).
-  * **Status:** Implemented
+### Get User Profile
+- **URL**: `/auth/me`
+- **Method**: `GET`
+- **Description**: Get authenticated user's profile information
+- **Headers**: Requires authorization token
+- **Response**: User object
 
-* `/api/auth/reset-password`:
-  * **Method:** POST
-  * **Description:** Resets user password using the token.
-  * **Request Body:** `resetToken`, `newPassword`
-  * **Response:** Confirmation message.
-  * **Status:** Implemented
+### Forgot Password
+- **URL**: `/auth/forgot-password`
+- **Method**: `POST`
+- **Description**: Request password reset
+- **Body**:
+  ```json
+  {
+    "email": "string"
+  }
+  ```
+- **Response**: Password reset instructions and token
 
-### Job Postings
+### Reset Password
+- **URL**: `/auth/reset-password`
+- **Method**: `POST`
+- **Description**: Reset user password using token
+- **Body**:
+  ```json
+  {
+    "resetToken": "string",
+    "newPassword": "string"
+  }
+  ```
+- **Response**: Success message
 
-* `/api/jobs`:
-  * **Method:** GET
-  * **Description:** Retrieves a list of all job postings.
-  * **Query Parameters:** `page`, `limit`, `type`, `location`
-  * **Response:** List of jobs with pagination details.
-  * **Status:** Implemented
+## Job Endpoints
 
-* `/api/jobs`:
-  * **Method:** POST
-  * **Description:** Creates a new job posting.
-  * **Request Body:** `title`, `description`, `type`, `location`, `company`, `salary`
-  * **Auth Required:** Yes
-  * **Response:** Created job details.
-  * **Status:** Implemented
+### Get Jobs
+- **URL**: `/jobs`
+- **Method**: `GET`
+- **Description**: Get all jobs with optional filtering
+- **Query Parameters**:
+  - `page`: Page number (default: 1)
+  - `limit`: Items per page (default: 10)
+  - `type`: Filter by job type
+  - `location`: Filter by location
+- **Response**: List of jobs with pagination data
 
-* `/api/jobs/:id`:
-  * **Method:** GET
-  * **Description:** Retrieves a specific job posting by its ID.
-  * **Response:** Job details.
-  * **Status:** Implemented
+### Get Job by ID
+- **URL**: `/jobs/:id`
+- **Method**: `GET`
+- **Description**: Get details of a specific job
+- **Response**: Job object
 
-* `/api/jobs/:id`:
-  * **Method:** PUT
-  * **Description:** Updates an existing job posting.
-  * **Request Body:** Job fields to update.
-  * **Auth Required:** Yes (job owner or admin)
-  * **Response:** Updated job details.
-  * **Status:** Implemented
+### Post Job
+- **URL**: `/jobs`
+- **Method**: `POST`
+- **Description**: Create a new job posting
+- **Headers**: Requires authorization token
+- **Body**:
+  ```json
+  {
+    "title": "string",
+    "description": "string",
+    "type": "string",
+    "location": "string",
+    "company": "string",
+    "salary": "number"
+  }
+  ```
+- **Response**: Created job object
 
-* `/api/jobs/:id`:
-  * **Method:** DELETE
-  * **Description:** Deletes a job posting.
-  * **Auth Required:** Yes (job owner or admin)
-  * **Response:** Confirmation message.
-  * **Status:** Implemented
+### Update Job
+- **URL**: `/jobs/:id`
+- **Method**: `PUT`
+- **Description**: Update an existing job
+- **Headers**: Requires authorization token
+- **Body**: Job fields to update
+- **Response**: Updated job object
 
-* `/api/jobs/my-jobs`:
-  * **Method:** GET
-  * **Description:** Retrieves jobs posted by the logged-in user.
-  * **Auth Required:** Yes
-  * **Response:** List of user's jobs.
-  * **Status:** Implemented
+### Delete Job
+- **URL**: `/jobs/:id`
+- **Method**: `DELETE`
+- **Description**: Delete a job posting
+- **Headers**: Requires authorization token
+- **Response**: Success message
 
-### Job Applications
+### Get Jobs by User
+- **URL**: `/job/my-jobs`
+- **Method**: `GET`
+- **Description**: Get jobs posted by the authenticated user
+- **Headers**: Requires authorization token
+- **Response**: List of user's job postings
 
-* `/api/jobs/:id/apply`:
-  * **Method:** POST
-  * **Description:** Allows a user to apply to a job.
-  * **Request Body:** `coverLetter`, `resume`
-  * **Auth Required:** Yes
-  * **Response:** Application details.
-  * **Status:** Implemented
+## Job Application Endpoints
 
-* `/api/jobs/:id/applications`:
-  * **Method:** GET
-  * **Description:** Retrieves applications for a job posting.
-  * **Auth Required:** Yes (job owner or admin)
-  * **Response:** List of applications.
-  * **Status:** Implemented
+### Apply to Job
+- **URL**: `/jobs/:id/apply`
+- **Method**: `POST`
+- **Description**: Submit application for a job
+- **Headers**: Requires authorization token
+- **Body**:
+  ```json
+  {
+    "coverLetter": "string",
+    "resume": "string"
+  }
+  ```
+- **Response**: Created application object
 
-* `/api/jobs/:id/applications/:applicationId`:
-  * **Method:** PUT
-  * **Description:** Updates an application status.
-  * **Request Body:** `status` (pending, accepted, rejected)
-  * **Auth Required:** Yes (job owner or admin)
-  * **Response:** Updated application details.
-  * **Status:** Implemented
+### Get Job Applications
+- **URL**: `/jobs/:id/applications`
+- **Method**: `GET`
+- **Description**: Get all applications for a specific job
+- **Headers**: Requires authorization token (job poster only)
+- **Response**: List of applications
 
-* `/api/jobs/:id/applications/:applicationId`:
-  * **Method:** DELETE
-  * **Description:** Deletes a job application.
-  * **Auth Required:** Yes (job owner, applicant, or admin)
-  * **Response:** Confirmation message.
-  * **Status:** Implemented
+### Update Application Status
+- **URL**: `/applications/:applicationId`
+- **Method**: `PUT`
+- **Description**: Update status of an application
+- **Headers**: Requires authorization token (job poster only)
+- **Body**:
+  ```json
+  {
+    "status": "pending|accepted|rejected"
+  }
+  ```
+- **Response**: Updated application object
 
-## Planned Features (Not Yet Implemented)
+### Delete Application
+- **URL**: `/applications/:applicationId`
+- **Method**: `DELETE`
+- **Description**: Delete an application
+- **Headers**: Requires authorization token
+- **Response**: Success message
 
-### User Authentication & Authorization
+## Additional Job Features
 
-* **Email Verification:** Verify user email after registration.
-* **Role-Based Access Control (RBAC):** More granular control over permissions.
-* **Social Login:** Integration with third-party providers.
-* **Two-Factor Authentication (2FA):** Enhance sign-in security.
+### Get Featured Jobs
+- **URL**: `/featured-jobs`
+- **Method**: `GET`
+- **Description**: Get a list of featured job postings
+- **Response**: List of featured jobs
 
-### Job Postings
+### Search Jobs
+- **URL**: `/search-jobs`
+- **Method**: `GET`
+- **Description**: Search jobs with advanced filtering
+- **Query Parameters**:
+  - `keyword`: Search in title and description
+  - `location`: Filter by location
+  - `type`: Filter by job type
+  - `minSalary`: Minimum salary
+  - `maxSalary`: Maximum salary
+  - `company`: Filter by company name
+  - `page`: Page number
+  - `limit`: Items per page
+  - `sortBy`: Field to sort by
+  - `sortOrder`: Sort direction (asc/desc)
+- **Response**: Filtered jobs with pagination
 
-* **Advanced Filtering:** Additional query parameters like salary range, experience level, etc.
-* **Featured/Sponsored Jobs:** Ability to mark certain jobs as featured.
-* **Job Expiration:** Automatically expire job postings after a certain period.
-* **Job Saving:** Allow job seekers to save jobs for later.
-* **Similar Jobs Recommendations:** Suggest similar jobs based on user profile.
+### Get Recent Jobs
+- **URL**: `/recent-jobs`
+- **Method**: `GET`
+- **Description**: Get recently posted jobs
+- **Query Parameters**:
+  - `limit`: Number of jobs to return
+- **Response**: List of recent jobs
 
-### Company Profiles
+### Get Popular Categories
+- **URL**: `/popular-categories`
+- **Method**: `GET`
+- **Description**: Get most popular job categories
+- **Response**: List of categories with counts
 
-* **Company Profiles:** Create and manage company profiles.
-* **Company Reviews:** Allow users to review companies.
-* **Company Followers:** Allow users to follow companies.
-* **Company Branding:** Customization options for company profiles.
+## Job Saving and Recommendations
 
-### Job Applications
+### Save Job
+- **URL**: `/jobs/:id/save`
+- **Method**: `POST`
+- **Description**: Save a job for later viewing
+- **Headers**: Requires authorization token
+- **Response**: Success message
 
-* **Resume/CV Upload:** Support for document uploads.
-* **Internal Messaging:** Communication between applicants and hiring managers.
+### Get Saved Jobs
+- **URL**: `/saved-jobs`
+- **Method**: `GET`
+- **Description**: Get list of jobs saved by the user
+- **Headers**: Requires authorization token
+- **Response**: List of saved jobs
 
-### Admin Features
+### Remove Saved Job
+- **URL**: `/saved-jobs/:id`
+- **Method**: `DELETE`
+- **Description**: Remove a job from saved list
+- **Headers**: Requires authorization token
+- **Response**: Success message
 
-* **User Management:** CRUD operations for user accounts.
-* **Job Posting Moderation:** Review and approve/reject job postings.
-* **Analytics Dashboard:** Track key metrics.
+### Get Job Recommendations
+- **URL**: `/job-recommendations`
+- **Method**: `GET`
+- **Description**: Get personalized job recommendations
+- **Headers**: Requires authorization token
+- **Response**: List of recommended jobs
 
-### General Improvements
+## Additional Features
 
-* **Email Notifications:** For various events and updates.
-* **Advanced Search:** Improved search functionality.
-* **Rate Limiting:** Prevent abuse.
-* **Testing & Deployment:** Automated testing and deployment pipelines.
-* **Scalability Improvements:** For handling larger user bases.
-* **Payment Integration:** For premium features.
+### Get Job Statistics
+- **URL**: `/job-stats`
+- **Method**: `GET`
+- **Description**: Get overall job statistics
+- **Response**: Job statistics data
+
+### Report Job
+- **URL**: `/jobs/:id/report`
+- **Method**: `POST`
+- **Description**: Report a problematic job posting
+- **Headers**: Requires authorization token
+- **Body**:
+  ```json
+  {
+    "reason": "string",
+    "details": "string"
+  }
+  ```
+- **Response**: Report confirmation
+
+## Authentication
+Most endpoints require authentication using a JWT token.
+Include the token in the request header:
+```
+Authorization: Bearer <token>
+```
