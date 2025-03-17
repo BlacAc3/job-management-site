@@ -1,4 +1,5 @@
-import Job from "../models/jobs.js";
+import { Job, Application } from "../models/jobs.js";
+import { User } from "../models/user.js";
 
 const getJobs = async (req, res) => {
   try {
@@ -289,7 +290,305 @@ const deleteApplication = async (req, res) => {
     res.status(500).json({ message: "Failed to delete application" });
   }
 };
+const getFeaturedJobs = async (req, res) => {
+  try {
+    // Get featured jobs - could be jobs marked as featured or with highest ratings
+    const featuredJobs = await Job.find({ featured: true })
+      .sort({ createdAt: -1 })
+      .limit(5);
 
+    res.status(200).json(featuredJobs);
+  } catch (error) {
+    console.error("Error fetching featured jobs:", error);
+    res.status(500).json({ message: "Failed to fetch featured jobs" });
+  }
+};
+
+const searchJobs = async (req, res) => {
+  try {
+    const {
+      keyword,
+      location,
+      type,
+      minSalary,
+      maxSalary,
+      company,
+      page = 1,
+      limit = 10,
+      sortBy = "createdAt",
+      sortOrder = "desc",
+    } = req.query;
+
+    // Build the query object
+    const query = {};
+
+    if (keyword) {
+      query.$or = [
+        { title: { $regex: keyword, $options: "i" } },
+        { description: { $regex: keyword, $options: "i" } },
+      ];
+    }
+
+    if (location) query.location = { $regex: location, $options: "i" };
+    if (type) query.type = type;
+    if (company) query.company = { $regex: company, $options: "i" };
+
+    // Salary range filtering
+    if (minSalary || maxSalary) {
+      query.salary = {};
+      if (minSalary) query.salary.$gte = Number(minSalary);
+      if (maxSalary) query.salary.$lte = Number(maxSalary);
+    }
+
+    // Build sort object
+    const sort = {};
+    sort[sortBy] = sortOrder === "asc" ? 1 : -1;
+
+    // Execute query with pagination
+    const totalJobs = await Job.countDocuments(query);
+    const totalPages = Math.ceil(totalJobs / limit);
+
+    const jobs = await Job.find(query)
+      .sort(sort)
+      .skip((page - 1) * limit)
+      .limit(Number(limit));
+
+    res.status(200).json({
+      jobs,
+      pagination: {
+        currentPage: Number(page),
+        totalPages,
+        totalJobs,
+        limit: Number(limit),
+      },
+    });
+  } catch (error) {
+    console.error("Error searching jobs:", error);
+    res.status(500).json({ message: "Failed to search jobs" });
+  }
+};
+
+const getRecentJobs = async (req, res) => {
+  try {
+    const { limit = 10 } = req.query;
+
+    const recentJobs = await Job.find()
+      .sort({ createdAt: -1 })
+      .limit(Number(limit));
+
+    res.status(200).json(recentJobs);
+  } catch (error) {
+    console.error("Error fetching recent jobs:", error);
+    res.status(500).json({ message: "Failed to fetch recent jobs" });
+  }
+};
+
+const getPopularCategories = async (req, res) => {
+  try {
+    // Aggregate jobs to get counts by type/category
+    const categories = await Job.aggregate([
+      { $group: { _id: "$type", count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+      { $limit: 10 },
+    ]);
+
+    res.status(200).json(categories);
+  } catch (error) {
+    console.error("Error fetching popular categories:", error);
+    res.status(500).json({ message: "Failed to fetch popular categories" });
+  }
+};
+
+const saveJob = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const jobId = req.params.id;
+
+    // Check if job exists
+    const job = await Job.findById(jobId);
+    if (!job) {
+      return res.status(404).json({ message: "Job not found" });
+    }
+
+    // Check if job is already saved by the user
+    const user = await User.findById(userId);
+    if (user.savedJobs && user.savedJobs.includes(jobId)) {
+      return res.status(400).json({ message: "Job already saved" });
+    }
+
+    // Add job to saved jobs
+    await User.findByIdAndUpdate(
+      userId,
+      { $push: { savedJobs: jobId } },
+      { new: true },
+    );
+
+    res.status(200).json({ message: "Job saved successfully" });
+  } catch (error) {
+    console.error("Error saving job:", error);
+    res.status(500).json({ message: "Failed to save job" });
+  }
+};
+
+const getSavedJobs = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Get user with populated saved jobs
+    const user = await User.findById(userId).populate("savedJobs");
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json(user.savedJobs || []);
+  } catch (error) {
+    console.error("Error fetching saved jobs:", error);
+    res.status(500).json({ message: "Failed to fetch saved jobs" });
+  }
+};
+
+const removeSavedJob = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const jobId = req.params.id;
+
+    // Remove job from saved jobs
+    await User.findByIdAndUpdate(userId, { $pull: { savedJobs: jobId } });
+
+    res.status(200).json({ message: "Job removed from saved jobs" });
+  } catch (error) {
+    console.error("Error removing saved job:", error);
+    res.status(500).json({ message: "Failed to remove saved job" });
+  }
+};
+
+const getJobStats = async (req, res) => {
+  try {
+    // Get overall job statistics
+    const totalJobs = await Job.countDocuments();
+
+    // Jobs by type
+    const jobsByType = await Job.aggregate([
+      { $group: { _id: "$type", count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+    ]);
+
+    // Jobs by location
+    const jobsByLocation = await Job.aggregate([
+      { $group: { _id: "$location", count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+      { $limit: 10 },
+    ]);
+
+    // Average salary
+    const salaryStats = await Job.aggregate([
+      { $match: { salary: { $exists: true, $ne: null } } },
+      {
+        $group: {
+          _id: null,
+          averageSalary: { $avg: "$salary" },
+          minSalary: { $min: "$salary" },
+          maxSalary: { $max: "$salary" },
+        },
+      },
+    ]);
+
+    // Jobs posted in the last 30 days
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const recentJobsCount = await Job.countDocuments({
+      createdAt: { $gte: thirtyDaysAgo },
+    });
+
+    res.status(200).json({
+      totalJobs,
+      jobsByType,
+      jobsByLocation,
+      salaryStats: salaryStats[0] || {},
+      recentJobsCount,
+    });
+  } catch (error) {
+    console.error("Error fetching job stats:", error);
+    res.status(500).json({ message: "Failed to fetch job statistics" });
+  }
+};
+
+const reportJob = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const jobId = req.params.id;
+    const { reason, details } = req.body;
+
+    if (!reason) {
+      return res
+        .status(400)
+        .json({ message: "Reason for reporting is required" });
+    }
+
+    // Check if job exists
+    const job = await Job.findById(jobId);
+    if (!job) {
+      return res.status(404).json({ message: "Job not found" });
+    }
+
+    // Create a report
+    const report = {
+      job: jobId,
+      reportedBy: userId,
+      reason,
+      details,
+      status: "pending",
+      createdAt: new Date(),
+    };
+
+    // Add to reports array in the job document
+    await Job.findByIdAndUpdate(jobId, { $push: { reports: report } });
+
+    res.status(200).json({
+      message: "Job reported successfully",
+      report,
+    });
+  } catch (error) {
+    console.error("Error reporting job:", error);
+    res.status(500).json({ message: "Failed to report job" });
+  }
+};
+
+const getJobRecommendations = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Get user's application history to understand preferences
+    const userApplications = await Application.find({ applicant: userId });
+
+    // Extract job IDs to find similar jobs
+    const appliedJobIds = userApplications.map((app) => app.job);
+
+    // Find the jobs the user applied to
+    const appliedJobs = await Job.find({ _id: { $in: appliedJobIds } });
+
+    // Extract common types, locations, etc.
+    const jobTypes = [...new Set(appliedJobs.map((job) => job.type))];
+    const locations = [...new Set(appliedJobs.map((job) => job.location))];
+
+    // Find jobs with similar attributes but not already applied to
+    const recommendations = await Job.find({
+      _id: { $nin: appliedJobIds },
+      $or: [{ type: { $in: jobTypes } }, { location: { $in: locations } }],
+    })
+      .sort({ createdAt: -1 })
+      .limit(10);
+
+    res.status(200).json(recommendations);
+  } catch (error) {
+    console.error("Error getting job recommendations:", error);
+    res.status(500).json({ message: "Failed to get job recommendations" });
+  }
+};
+
+// Make sure to export all the new functions
 export {
   getJobs,
   postJob,
@@ -301,4 +600,14 @@ export {
   getJobApplications,
   updateApplicationStatus,
   deleteApplication,
+  getFeaturedJobs,
+  searchJobs,
+  getRecentJobs,
+  getPopularCategories,
+  saveJob,
+  getSavedJobs,
+  removeSavedJob,
+  getJobStats,
+  reportJob,
+  getJobRecommendations,
 };
